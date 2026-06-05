@@ -53,9 +53,9 @@ metadata changes on top.
       unit (e.g. `5 cm - 1 cm == 4 cm` round-trips as `cm`).
 
 ### 2. Replace Travis with GitHub Actions
-- [ ] Add `.github/workflows/ci.yml` running `bundle exec rake` on a current
+- [x] Add `.github/workflows/ci.yml` running `bundle exec rake` on a current
       Ruby matrix (3.2, 3.3, 3.4, and `head`).
-- [ ] Delete `.travis.yml`.
+- [x] Delete `.travis.yml`.
 - [ ] (Optional) Add a JRuby/TruffleRuby leg once the suite is green on MRI.
 
 ### 3. Refresh the README
