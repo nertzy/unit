@@ -59,8 +59,8 @@ metadata changes on top.
 - [ ] (Optional) Add a JRuby/TruffleRuby leg once the suite is green on MRI.
 
 ### 3. Refresh the README
-- [ ] Remove the Gemnasium, Travis, Code Climate, and Fury PNG badges.
-- [ ] Add a working RubyGems version badge and a GitHub Actions status badge.
+- [x] Remove the Gemnasium, Travis, Code Climate, and Fury PNG badges.
+- [x] Add a working RubyGems version badge and a GitHub Actions status badge.
 - [ ] Verify all usage examples still run as written (they double as docs).
 
 ### 4. Tidy the gemspec
