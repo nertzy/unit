@@ -1,22 +1,30 @@
-# -*- encoding: utf-8 -*-
-require File.dirname(__FILE__) + '/lib/unit/version'
-require 'date'
+require_relative 'lib/unit/version'
 
 Gem::Specification.new do |s|
   s.name = 'unit'
   s.version = Unit::VERSION
-  s.description =
   s.summary = 'Scientific unit support for ruby for calculations'
-  s.homepage = 'http://github.com/minad/unit'
+  s.description = 'Unit introduces computational units to Ruby, with built-in ' \
+    'support for binary, mathematical, SI, imperial, scientific and temporal ' \
+    'units, unit-aware arithmetic and conversions, and a simple interface for ' \
+    'defining your own custom units.'
+  s.homepage = 'https://github.com/minad/unit'
   s.license = 'MIT'
 
   s.authors = ['Daniel Mendler', 'Chris Cashwell']
-  s.date  = Date.today.to_s
   s.email = ['mail@daniel-mendler.de']
 
-  s.files         = `git ls-files`.split("\n")
+  s.required_ruby_version = '>= 3.3'
+
+  s.metadata = {
+    'source_code_uri'       => s.homepage,
+    'bug_tracker_uri'       => "#{s.homepage}/issues",
+    'rubygems_mfa_required' => 'true',
+  }
+
+  s.files         = Dir['lib/**/*.{rb,yml}'] + %w[README.markdown LICENSE]
   s.require_paths = ['lib']
 
-  s.add_development_dependency('rake', ['>= 0.8.7'])
-  s.add_development_dependency('rspec')
+  s.add_development_dependency('rake', ['~> 13.0'])
+  s.add_development_dependency('rspec', ['~> 3.0'])
 end

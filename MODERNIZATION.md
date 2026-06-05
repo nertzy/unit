@@ -64,11 +64,11 @@ metadata changes on top.
 - [ ] Verify all usage examples still run as written (they double as docs).
 
 ### 4. Tidy the gemspec
-- [ ] Declare `required_ruby_version` (proposed floor: `>= 3.0`).
-- [ ] Give `description` real prose distinct from `summary`.
-- [ ] Remove `s.date = Date.today.to_s` (RubyGems sets this; it breaks
+- [x] Declare `required_ruby_version` (proposed floor: `>= 3.0`).
+- [x] Give `description` real prose distinct from `summary`.
+- [x] Remove `s.date = Date.today.to_s` (RubyGems sets this; it breaks
       reproducible builds).
-- [ ] Pin dev dependency `rspec` to `~> 3.0` (suite is already RSpec 3 syntax).
+- [x] Pin dev dependency `rspec` to `~> 3.0` (suite is already RSpec 3 syntax).
 
 ### 5. Release hygiene
 - [ ] Add `CHANGELOG.md` documenting the bug fix and modernization.
