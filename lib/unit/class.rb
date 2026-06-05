@@ -12,10 +12,18 @@ class Unit < Numeric
     reduce!
   end
 
+  # Numeric and its subclasses are treated as immutable value objects, so
+  # Ruby's Numeric#dup/#clone return self. Unit mutates @value and @unit in
+  # place (see #normalize! and #reduce!), so it needs genuine copies; allocate
+  # a fresh instance and copy state into it explicitly.
+  def dup
+    self.class.allocate.tap { |copy| copy.send(:initialize_copy, self) }
+  end
+
   def initialize_copy(other)
     @system = other.system
     @value = other.value
-    @unit = other.unit.dup
+    @unit = other.unit.map(&:dup)
     @normalized = other.normalized
   end
 

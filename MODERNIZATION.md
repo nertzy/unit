@@ -46,10 +46,10 @@ workflow: drive the bug fix from the already-failing specs, then layer infra and
 metadata changes on top.
 
 ### 1. Fix the `normalize` mutation bug 🔴 (highest priority)
-- [ ] Deep-dup `@unit` (and reset memoized `@normalized`) in `initialize_copy`
+- [x] Deep-dup `@unit` (and reset memoized `@normalized`) in `initialize_copy`
       so `normalize` never touches its receiver.
-- [ ] Confirm `bundle exec rake` reports `49 examples, 0 failures`.
-- [ ] Add a focused regression spec for add/subtract preserving the caller's
+- [x] Confirm `bundle exec rake` reports `49 examples, 0 failures`.
+- [x] Add a focused regression spec for add/subtract preserving the caller's
       unit (e.g. `5 cm - 1 cm == 4 cm` round-trips as `cm`).
 
 ### 2. Replace Travis with GitHub Actions

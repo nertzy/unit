@@ -133,6 +133,18 @@ describe 'Unit' do
     end
   end
 
+  describe "#dup" do
+    it "returns a distinct, independent copy" do
+      unit = Unit(1, 'joule')
+
+      copy = unit.dup
+      expect(copy).not_to equal(unit)
+
+      copy.normalize!
+      expect(unit).to eql Unit(1, 'joule')
+    end
+  end
+
   it 'should convert units' do
     expect(Unit(1, "MeV").in("joule")).to eq(Unit(1.602176487e-13, 'joule'))
     expect(Unit(1, "kilometer").in("meter")).to eq(Unit(1000, 'meter'))
