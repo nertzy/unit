@@ -131,8 +131,12 @@ class Unit < Numeric
 
   def <=>(other)
     if Numeric === other
-      other = coerce_numeric_compatible(other)
-      a, b = self.normalize, other.normalize
+      coerced = coerce_numeric(other)
+      unless compatible?(coerced)
+        raise ArgumentError,
+          "comparison of #{comparison_label(self)} with #{comparison_label(other)} failed"
+      end
+      a, b = self.normalize, coerced.normalize
       a.value <=> b.value
     elsif other.respond_to?(:coerce)
       apply_through_coercion(other, __method__)
@@ -292,6 +296,18 @@ class Unit < Numeric
     first.send(oper, last)
   rescue
     raise TypeError, "#{obj.class} can't be coerced into #{self.class}"
+  end
+
+  # Label an operand for a failed-comparison message. A dimensional unit keeps
+  # its informative #inspect (Unit("1 m")); a dimensionless unit is just a
+  # number — and a coerced bare numeric arrives wrapped as one — so it is
+  # reported by its underlying numeric class, matching how core Ruby names the
+  # operands of a failed comparison (and avoiding splatting an arbitrary
+  # #inspect into the message).
+  def comparison_label(operand)
+    return operand.inspect if Unit === operand && !operand.unit.empty?
+    operand = operand.value if Unit === operand
+    operand.class
   end
 
   def coerce_numeric_compatible(object)

@@ -86,6 +86,50 @@ describe 'Unit' do
     expect { Unit(1) < "string" }.to raise_error(ArgumentError)
   end
 
+  it "should raise a descriptive ArgumentError from <=> for incompatible dimensions" do
+    expect { Unit(1, 'm') <=> Unit(1, 's') }.to raise_error(
+      ArgumentError, 'comparison of Unit("1 m") with Unit("1 s") failed'
+    )
+    expect { Unit(1, 'g') <=> Unit(1, 'm') }.to raise_error(ArgumentError)
+  end
+
+  it "should show the operand's class, not a coerced unit, for non-Unit numerics" do
+    expect { Unit(1, 'm') > 1.2 }.to raise_error(
+      ArgumentError, 'comparison of Unit("1 m") with Float failed'
+    )
+    expect { Unit(1, 'm') > 5 }.to raise_error(
+      ArgumentError, 'comparison of Unit("1 m") with Integer failed'
+    )
+  end
+
+  it "should label operands symmetrically when the unit is on the right" do
+    expect { 1.2 > Unit(1, 'm') }.to raise_error(
+      ArgumentError, 'comparison of Float with Unit("1 m") failed'
+    )
+    expect { 5 < Unit(1, 'm') }.to raise_error(
+      ArgumentError, 'comparison of Integer with Unit("1 m") failed'
+    )
+  end
+
+  it "should still compare units with compatible dimensions" do
+    expect(Unit(100, 'cm') <=> Unit(1, 'm')).to eq(0)
+    expect(Unit(1, 'cm') <=> Unit(1, 'm')).to eq(-1)
+    expect(Unit(2, 'm') <=> Unit(1, 'm')).to eq(1)
+  end
+
+  it "should carry the descriptive error through every comparison path" do
+    expect { Unit(1, 'm') > Unit(1, 's') }.to raise_error(ArgumentError, /Unit\("1 m"\).*Unit\("1 s"\)/)
+    expect { [Unit(1, 'm'), Unit(2, 's')].sort }.to raise_error(ArgumentError, /incompatible|failed/)
+    expect { Unit(1, 'm').between?(Unit(1, 's'), Unit(2, 's')) }.to raise_error(ArgumentError)
+    expect { Unit(1, 'm').clamp(Unit(1, 's'), Unit(2, 's')) }.to raise_error(ArgumentError)
+  end
+
+  it "should sort and aggregate compatible units" do
+    sorted = [Unit(3, 'm'), Unit(1, 'm'), Unit(2, 'm')].sort
+    expect(sorted).to eq([Unit(1, 'm'), Unit(2, 'm'), Unit(3, 'm')])
+    expect([Unit(50, 'cm'), Unit(1, 'm')].max).to eq(Unit(1, 'm'))
+  end
+
   it "should support eql comparison" do
     expect(Unit(1)).to eql(Unit(1))
     expect(Unit(1.0)).not_to eql(Unit(1))
@@ -255,8 +299,8 @@ describe 'Unit' do
     expect(Unit(100, "m")).to be > Unit(0.0001, "km")
   end
 
-  it "should fail comparison on differing units" do
-    expect { Unit(1, "second") > Unit(1, "meter") }.to raise_error(Unit::IncompatibleUnitError)
+  it "should fail ordered comparison on differing units" do
+    expect { Unit(1, "second") > Unit(1, "meter") }.to raise_error(ArgumentError)
   end
 
   it "should keep units when the value is zero" do
