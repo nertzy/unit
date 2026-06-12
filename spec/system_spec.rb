@@ -95,4 +95,36 @@ describe Unit::System do
       end
     end
   end
+
+  describe "lexing every symbol in the default system" do
+    # Guards against the lexer silently dropping a registered glyph to a
+    # dimensionless value (the historical Ω/% failure): every unit symbol the
+    # system knows must parse back to that same unit. Built on a fresh system
+    # with the documented default load-out so the set is deterministic and not
+    # polluted by other specs loading optional systems onto Unit.default_system.
+    default = Unit::System.new("default") do |sys|
+      sys.load(:si)
+      sys.load(:binary)
+      sys.load(:degree)
+      sys.load(:time)
+    end
+    default.unit_symbol.each do |sym, name|
+      it "parses #{sym.inspect} as #{name}" do
+        expect(Unit(1, sym, default).unit).to eq(Unit(1, name.to_s, default).unit)
+      end
+    end
+  end
+
+  describe "lexing a glyph symbol loaded at runtime" do
+    # The lexer is derived from the registered symbols, so a unit defined after
+    # the system was built (e.g. an app loading a domain unit) becomes lexable
+    # without any change to the gem.
+    it "parses a non-word glyph symbol once its unit is loaded" do
+      system.load(:si)
+      system.load('units' => { 'percent' => { 'sym' => '%', 'def' => '1 / 100' } })
+
+      expect(Unit(1, '%', system).unit).to eq(Unit(1, 'percent', system).unit)
+      expect(Unit(50, '%', system)).to eq(Unit(Rational(1, 2), system))
+    end
+  end
 end

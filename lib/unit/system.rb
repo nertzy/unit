@@ -47,6 +47,10 @@ class Unit < Numeric
 
       @unit.each {|name, unit| validate_unit(unit[:def]) }
 
+      # Newly registered symbols may introduce glyph characters the lexer must
+      # recognize; rebuild it lazily on next parse.
+      @tokenizer = nil
+
       true
     end
 
@@ -62,7 +66,7 @@ class Unit < Numeric
 
     def parse_unit(expr)
       stack, result, implicit_mul = [], [], false
-      expr.to_s.scan(TOKENIZER).each do |tok|
+      expr.to_s.scan(tokenizer).each do |tok|
         if tok == '('
           stack << '('
           implicit_mul = false
@@ -79,7 +83,7 @@ class Unit < Numeric
           val = case tok
                 when REAL   then [[:one, tok.to_f, 1]]
                 when DEC    then [[:one, tok.to_i, 1]]
-                when SYMBOL then symbol_to_unit(tok)
+                else symbol_to_unit(tok)
                 end
           stack << '*' if implicit_mul
           implicit_mul = true
@@ -94,11 +98,28 @@ class Unit < Numeric
 
     REAL   = /^-?(?:(?:\d*\.\d+|\d+\.\d*)(?:[eE][-+]?\d+)?|\d+[eE][-+]?\d+)$/
     DEC    = /^-?\d+$/
-    SYMBOL = /^[a-zA-Z_°'"][\w°'"]*$/
     OPERATOR = { '/' => ['/', 1], '*' => ['*', 1], '·' => ['*', 1], '^' => ['^', 2], '**' => ['^', 2] }
     OPERATOR_TOKENS = OPERATOR.keys.sort_by {|x| -x.size }. map {|x| Regexp.quote(x) }
-    VALUE_TOKENS = [REAL.source[1..-2], DEC.source[1..-2], SYMBOL.source[1..-2]]
-    TOKENIZER = Regexp.new((OPERATOR_TOKENS + VALUE_TOKENS + ['\\(', '\\)']).join('|'))
+    OPERATOR_CHARS = (OPERATOR.keys.join + '()').chars.uniq.freeze
+
+    # The tokenizer and symbol matcher are derived from the symbols actually
+    # registered in this system (plus an ASCII baseline), then memoized.
+    # #load clears the memo, so any unit defined later — including ones whose
+    # symbol uses a non-ASCII glyph (Ω, ℃, µ, %) — becomes lexable without
+    # touching the lexer. This replaces a frozen glyph char-class that silently
+    # dropped unrecognized glyphs to a dimensionless value.
+    def tokenizer
+      @tokenizer ||= Regexp.new(
+        (OPERATOR_TOKENS + [REAL.source[1..-2], DEC.source[1..-2], symbol_pattern, '\\(', '\\)']).join('|')
+      )
+    end
+
+    def symbol_pattern
+      glyphs = (unit_symbol.keys + factor_symbol.keys).join.chars.uniq.reject do |char|
+        char =~ /[A-Za-z0-9_]/ || char =~ /\s/ || OPERATOR_CHARS.include?(char)
+      end
+      "[A-Za-z0-9_#{glyphs.map { |char| Regexp.escape(char) }.join}]+"
+    end
 
     def lookup_symbol(symbol)
       if unit_symbol[symbol]
