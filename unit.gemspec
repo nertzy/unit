@@ -11,14 +11,16 @@ Gem::Specification.new do |s|
   s.homepage = 'https://github.com/minad/unit'
   s.license = 'MIT'
 
-  s.authors = ['Daniel Mendler', 'Chris Cashwell']
-  s.email = ['mail@daniel-mendler.de']
+  s.authors = ['Daniel Mendler', 'Chris Cashwell', 'Grant Hutchins']
+  s.email = ['mail@daniel-mendler.de', 'gems@nertzy.com']
 
   s.required_ruby_version = '>= 3.3'
 
   s.metadata = {
     'source_code_uri'       => s.homepage,
     'bug_tracker_uri'       => "#{s.homepage}/issues",
+    'changelog_uri'         => "#{s.homepage}/blob/master/CHANGELOG.md",
+    'documentation_uri'     => 'https://rubydoc.info/gems/unit',
     'rubygems_mfa_required' => 'true',
   }
 
