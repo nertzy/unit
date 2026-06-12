@@ -127,4 +127,49 @@ describe Unit::System do
       expect(Unit(50, '%', system)).to eq(Unit(Rational(1, 2), system))
     end
   end
+
+  describe "rejecting symbols it cannot resolve" do
+    # The lexer matches any run of non-operator, non-whitespace characters as a
+    # symbol — including glyphs that no system has registered — so an unknown
+    # symbol reaches validation and fails loudly as "Undefined unit" instead of
+    # being silently dropped to a dimensionless value. This keeps unknown
+    # glyphs consistent with unknown ASCII symbols rather than special-casing
+    # them into silence.
+    before { system.load(:si) }
+
+    it "raises for an unknown ASCII symbol" do
+      expect { Unit(1, "foo", system) }.to raise_error(TypeError, "Undefined unit foo")
+    end
+
+    it "raises for an unregistered glyph instead of silently dropping it" do
+      expect { Unit(1, "λ", system) }.to raise_error(TypeError, "Undefined unit λ")
+      expect { Unit(5, "αβγ", system) }.to raise_error(TypeError, "Undefined unit αβγ")
+    end
+
+    it "raises when an unregistered glyph is implicitly multiplied with a known unit" do
+      expect { Unit(1, "m λ", system) }.to raise_error(TypeError, "Undefined unit λ")
+      expect { Unit(1, "λ m", system) }.to raise_error(TypeError, "Undefined unit λ")
+    end
+
+    it "names the unregistered glyph rather than a neighboring operator" do
+      # The glyph used to be dropped, leaving a dangling operator that raised a
+      # misleading "Unexpected token /"; now the real culprit is reported.
+      expect { Unit(1, "m/λ", system) }.to raise_error(TypeError, "Undefined unit λ")
+      expect { Unit(1, "λ^2", system) }.to raise_error(TypeError, "Undefined unit λ")
+    end
+  end
+
+  describe "parsing a unit whose system has not been loaded" do
+    # Directly answers "what happens with unit strings that aren't loaded": the
+    # symbol is lexed but unresolved, so it fails loudly until the defining
+    # system is loaded, after which it resolves normally.
+    it "raises until the defining system is loaded, then resolves" do
+      system.load(:si)
+      # megaelectronvolt is defined in :scientific, which is not loaded yet.
+      expect { Unit(1, "MeV", system) }.to raise_error(TypeError, "Undefined unit MeV")
+
+      system.load(:scientific)
+      expect(Unit(1, "MeV", system).unit).to eq(Unit(1, "megaelectronvolt", system).unit)
+    end
+  end
 end
