@@ -62,6 +62,30 @@ describe 'Unit' do
     expect(Unit(2)).to be > UnitOne.new
   end
 
+  it "should return false from == for objects that are not comparable" do
+    expect(Unit(1) == nil).to be false
+    expect(Unit(1) == "string").to be false
+    expect(Unit(1) == []).to be false
+    expect(Unit(1) == :symbol).to be false
+    expect(Unit(1)).not_to eq(nil)
+    expect(Unit(1)).not_to eq("string")
+  end
+
+  it "should treat != consistently with ==" do
+    expect(Unit(1) != nil).to be true
+    expect(Unit(1) != "string").to be true
+  end
+
+  it "should return nil from <=> for objects that are not comparable" do
+    expect(Unit(1) <=> nil).to be_nil
+    expect(Unit(1) <=> "string").to be_nil
+  end
+
+  it "should raise ArgumentError for ordered comparison with incomparable objects" do
+    expect { Unit(1) > nil }.to raise_error(ArgumentError)
+    expect { Unit(1) < "string" }.to raise_error(ArgumentError)
+  end
+
   it "should support eql comparison" do
     expect(Unit(1)).to eql(Unit(1))
     expect(Unit(1.0)).not_to eql(Unit(1))

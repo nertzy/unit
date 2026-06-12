@@ -118,8 +118,10 @@ class Unit < Numeric
       other = coerce_numeric(other)
       a, b = self.normalize, other.normalize
       a.value == b.value && a.unit == b.unit
-    else
+    elsif other.respond_to?(:coerce)
       apply_through_coercion(other, __method__)
+    else
+      false
     end
   end
 
@@ -132,8 +134,10 @@ class Unit < Numeric
       other = coerce_numeric_compatible(other)
       a, b = self.normalize, other.normalize
       a.value <=> b.value
-    else
+    elsif other.respond_to?(:coerce)
       apply_through_coercion(other, __method__)
+    else
+      nil
     end
   end
 
