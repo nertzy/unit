@@ -27,6 +27,11 @@ class Unit < Numeric
     @normalized = other.normalized
   end
 
+  def freeze
+    normalize  # populate @normalized while still mutable
+    super
+  end
+
   # Converts to base units
   def normalize
     @normalized ||= dup.normalize!
