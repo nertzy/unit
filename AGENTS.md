@@ -45,8 +45,18 @@ conversions, and expression parsing (`Unit('1 m/s^2')`), plus an optional DSL
 
 - **`Unit` is a `Numeric` subclass, and modern Ruby treats numerics as immutable
   value objects** — `dup`/`clone` return `self` by default. `Unit` overrides
-  `#dup` precisely so copy-based methods like `#normalize` don't mutate the
-  receiver. Don't reintroduce reliance on the default `dup`.
+  `#dup` so copy-based methods like `#normalize` don't mutate the receiver;
+  `#freeze` is overridden for the complementary reason — it pre-populates
+  `@normalized` while the object is still mutable, because the lazy
+  `@normalized ||=` in `normalize` would raise `FrozenError` on the first
+  comparison otherwise. Don't reintroduce reliance on the default `dup`, and
+  don't add new lazy ivars that bypass the `freeze` pre-population.
+- **Comparison semantics:** `==` returns `false` for objects that are neither
+  `Numeric` nor coerceable (never raises). `<=>` raises `ArgumentError` for
+  compatible-type but incompatible-dimension operands (e.g. metres vs seconds);
+  it returns `nil` for non-`Numeric`, non-coerceable objects, honouring Ruby's
+  `<=>` contract. Keep this split: incompatible *types* → `nil`; incompatible
+  *dimensions* → `ArgumentError`.
 - **Not every unit is loaded by `require 'unit'`.** Only SI + binary + degree +
   time load by default; units such as `MeV` (scientific) need their system
   loaded first, e.g. `Unit.default_system.load(:scientific)`.

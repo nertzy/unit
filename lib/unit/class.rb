@@ -27,6 +27,17 @@ class Unit < Numeric
     @normalized = other.normalized
   end
 
+  # Pre-populate +@normalized+ before locking the object.
+  #
+  # +Unit+ is a +Numeric+ subclass, so Ruby treats it as an immutable value
+  # object. The lazy +@normalized ||=+ in +normalize+ would raise +FrozenError+
+  # on the first comparison call if the instance were frozen first; calling
+  # +normalize+ here ensures the ivar is already set when +super+ seals it.
+  def freeze
+    normalize
+    super
+  end
+
   # Converts to base units
   def normalize
     @normalized ||= dup.normalize!
@@ -113,6 +124,9 @@ class Unit < Numeric
     value.zero?
   end
 
+  # Returns +false+ for any object that is neither +Numeric+ nor coerceable,
+  # rather than raising. This keeps mixed-type equality checks safe (e.g.
+  # comparing against +nil+, strings, or arbitrary objects).
   def ==(other)
     if Numeric === other
       other = coerce_numeric(other)
@@ -129,6 +143,11 @@ class Unit < Numeric
     Unit === other && value.eql?(other.value) && unit == other.unit
   end
 
+  # Raises +ArgumentError+ when both operands are +Numeric+ but have
+  # incompatible dimensions (e.g. metres vs seconds); returns +nil+ for
+  # non-+Numeric+, non-coerceable objects. This split honours Ruby's +<=>+
+  # contract (return +nil+ for incomparable types) while still surfacing
+  # dimension mismatches loudly through every comparison operator.
   def <=>(other)
     if Numeric === other
       coerced = coerce_numeric(other)
