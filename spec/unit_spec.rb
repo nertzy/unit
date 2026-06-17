@@ -213,6 +213,20 @@ describe 'Unit' do
     end
   end
 
+  describe "#freeze" do
+    it "allows >= comparison without raising FrozenError" do
+      expect(Unit(1, "m").freeze >= Unit("0.9 m")).to be true
+    end
+
+    it "allows < comparison without raising FrozenError" do
+      expect(Unit(60, "Hz").freeze < Unit("61 Hz")).to be true
+    end
+
+    it "allows == comparison without raising FrozenError" do
+      expect(Unit(1, "kg").freeze == Unit("1 kg")).to be true
+    end
+  end
+
   it 'should convert units' do
     expect(Unit(1, "MeV").in("joule")).to eq(Unit(1.602176487e-13, 'joule'))
     expect(Unit(1, "kilometer").in("meter")).to eq(Unit(1000, 'meter'))
