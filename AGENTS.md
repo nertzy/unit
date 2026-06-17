@@ -47,6 +47,11 @@ conversions, and expression parsing (`Unit('1 m/s^2')`), plus an optional DSL
   value objects** — `dup`/`clone` return `self` by default. `Unit` overrides
   `#dup` precisely so copy-based methods like `#normalize` don't mutate the
   receiver. Don't reintroduce reliance on the default `dup`.
+- **The lexer is a load-time constant.** `Unit::System::TOKENIZER` is built once
+  when `system.rb` is loaded; it is *not* invalidated when new unit systems are
+  registered via `#load`. The constant matches any non-operator, non-whitespace
+  run (including unrecognised glyphs), which then fail loudly as "Undefined unit"
+  during validation rather than being silently dropped to a dimensionless value.
 - **Not every unit is loaded by `require 'unit'`.** Only SI + binary + degree +
   time load by default; units such as `MeV` (scientific) need their system
   loaded first, e.g. `Unit.default_system.load(:scientific)`.

@@ -103,6 +103,11 @@ class Unit < Numeric
     # (e.g. a stray Greek letter): they survive lexing and then fail loudly as
     # an "Undefined unit" during validation, exactly like an unknown ASCII
     # symbol does, instead of being silently dropped to a dimensionless value.
+    #
+    # Both constants are built once at load time from the static operator set.
+    # They are intentionally *not* invalidated when new unit systems are
+    # registered via System#load — the broad SYMBOL pattern already matches
+    # every glyph, so adding new symbols never requires rebuilding the lexer.
     SYMBOL = Regexp.new("[^\\s#{OPERATOR_CHARS.map { |char| Regexp.escape(char) }.join}]+")
     TOKENIZER = Regexp.new(
       (OPERATOR_TOKENS + [REAL.source[1..-2], DEC.source[1..-2], SYMBOL.source, '\\(', '\\)']).join('|')
