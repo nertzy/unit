@@ -60,6 +60,30 @@ class Unit < Numeric
       end
     end
 
+    # Parse a unit expression into a unit definition: an array of
+    # <tt>[factor, unit, exponent]</tt> triples suitable for +Unit.new+ and
+    # +validate_unit+.
+    #
+    # The expression is tokenized (see +TOKENIZER+) and evaluated with a
+    # shunting-yard pass over +OPERATOR+, supporting multiplication
+    # (<tt>*</tt>, <tt>·</tt>, or juxtaposition), division (<tt>/</tt>),
+    # exponentiation (<tt>^</tt>, <tt>**</tt>), grouping parentheses, and
+    # numeric literals.
+    #
+    #   system.parse_unit("m/s^2")  # => [[:one, 1, 1], [:meter, ..., 1], [:second, ..., -2]]
+    #
+    # An empty or whitespace-only expression has no tokens and yields the
+    # *dimensionless* unit <tt>[]</tt> — the same definition produced by
+    # <tt>Unit(1, "")</tt> — so conversion stays consistent with construction
+    # rather than returning +nil+.
+    #
+    #   system.parse_unit("")    # => []
+    #   system.parse_unit("  ")  # => []
+    #
+    # Unrecognized glyphs survive lexing (see +SYMBOL+) and fail loudly as an
+    # "Undefined unit" +TypeError+ during validation rather than being dropped.
+    #
+    # Raises +SyntaxError+ on unbalanced parentheses.
     def parse_unit(expr)
       stack, result, implicit_mul = [], [], false
       expr.to_s.scan(TOKENIZER).each do |tok|
@@ -87,7 +111,7 @@ class Unit < Numeric
         end
       end
       compute(result, stack.pop) while !stack.empty?
-      result.last
+      result.last || []
     end
 
     private

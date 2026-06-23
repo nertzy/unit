@@ -172,4 +172,16 @@ describe Unit::System do
       expect(Unit(1, "MeV", system).unit).to eq(Unit(1, "megaelectronvolt", system).unit)
     end
   end
+
+  describe "#parse_unit with an empty or whitespace-only expression" do
+    before { system.load(:si) }
+
+    it "returns [] (the dimensionless unit) for an empty string" do
+      expect(system.parse_unit("")).to eq([])
+    end
+
+    it "returns [] (the dimensionless unit) for a whitespace-only string" do
+      expect(system.parse_unit("  ")).to eq([])
+    end
+  end
 end
