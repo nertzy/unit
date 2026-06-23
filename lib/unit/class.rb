@@ -2,6 +2,7 @@
 class Unit < Numeric
   attr_reader :value, :normalized, :unit, :system
 
+  class ParseError < ArgumentError; end
   class IncompatibleUnitError < TypeError; end
 
   def initialize(value, unit, system)
