@@ -49,4 +49,18 @@ describe "Errors" do
     end
   end
 
+  describe "parse failures for a malformed unit expression" do
+    it "raises Unit::ParseError for a dangling operator" do
+      expect { Unit(1, "m").in!("m//s") }.to raise_error(Unit::ParseError, "Unexpected token /")
+    end
+
+    it "raises Unit::ParseError for an unbalanced opening parenthesis" do
+      expect { Unit(1, "m").in!("(s") }.to raise_error(Unit::ParseError, "Unexpected token (")
+    end
+
+    it "raises Unit::ParseError for an unbalanced closing parenthesis" do
+      expect { Unit(1, "m").in!(")") }.to raise_error(Unit::ParseError, "Unexpected token )")
+    end
+  end
+
 end

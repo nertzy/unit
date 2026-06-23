@@ -83,7 +83,7 @@ class Unit < Numeric
     # Unrecognized glyphs survive lexing (see +SYMBOL+) and fail loudly as an
     # "Undefined unit" +TypeError+ during validation rather than being dropped.
     #
-    # Raises +SyntaxError+ on unbalanced parentheses.
+    # Raises +Unit::ParseError+ on unbalanced parentheses.
     def parse_unit(expr)
       stack, result, implicit_mul = [], [], false
       expr.to_s.scan(TOKENIZER).each do |tok|
@@ -92,7 +92,7 @@ class Unit < Numeric
           implicit_mul = false
         elsif tok == ')'
           compute(result, stack.pop) while !stack.empty? && stack.last != '('
-          raise(SyntaxError, 'Unexpected token )') if stack.empty?
+          raise(Unit::ParseError, 'Unexpected token )') if stack.empty?
           stack.pop
           implicit_mul = true
         elsif OPERATOR.key?(tok)
@@ -151,12 +151,12 @@ class Unit < Numeric
 
     def compute(result, op)
       b = result.pop
-      a = result.pop || raise(SyntaxError, "Unexpected token #{op}")
+      a = result.pop || raise(Unit::ParseError, "Unexpected token #{op}")
       result << case op
                 when '*' then a + b
                 when '/' then a + Unit.power_unit(b, -1)
                 when '^' then Unit.power_unit(a, b[0][1])
-                else raise SyntaxError, "Unexpected token #{op}"
+                else raise Unit::ParseError, "Unexpected token #{op}"
                 end
     end
 
