@@ -26,4 +26,27 @@ describe "Errors" do
     end
   end
 
+  describe "converting to an empty (dimensionless) unit string" do
+    it "treats #in(\"\") as the dimensionless unit" do
+      expect(Unit(1, "").in("")).to eq(Unit(1, ""))
+    end
+
+    it "treats #in(\" \") (whitespace-only) as the dimensionless unit" do
+      expect(Unit(1, "").in(" ")).to eq(Unit(1, ""))
+    end
+
+    it "treats #in!(\"\") as the dimensionless unit" do
+      expect(Unit(1, "").in!("")).to eq(Unit(1, ""))
+    end
+
+    it "treats #in!(\" \") (whitespace-only) as the dimensionless unit" do
+      expect(Unit(1, "").in!(" ")).to eq(Unit(1, ""))
+    end
+
+    it "raises a clean TypeError (not NoMethodError) from #in! for an incompatible unit" do
+      unit = Unit(5, "m/s")
+      expect { unit.in!("") }.to raise_error(TypeError)
+    end
+  end
+
 end
