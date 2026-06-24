@@ -428,6 +428,43 @@ describe 'Unit' do
     end
   end
 
+  describe "#to_r" do
+    it "converts a dimensionless unit to Rational" do
+      expect(Unit(3).to_r).to eq(Rational(3))
+      expect(Unit(Rational(3, 4)).to_r).to eq(Rational(3, 4))
+      expect(Unit(1.5).to_r).to eq(Rational(3, 2))
+    end
+
+    it "raises RangeError for dimensional units" do
+      expect { Unit(3, "m").to_r }.to raise_error(RangeError, /can't convert/)
+      expect { Unit(1.5, "m/s").to_r }.to raise_error(RangeError)
+    end
+  end
+
+  describe "#numerator" do
+    it "returns the numerator of a dimensionless unit" do
+      expect(Unit(3).numerator).to eq(3)
+      expect(Unit(Rational(2, 3)).numerator).to eq(2)
+      expect(Unit(3.5).numerator).to eq(7)
+    end
+
+    it "raises RangeError for dimensional units" do
+      expect { Unit(3, "m").numerator }.to raise_error(RangeError)
+    end
+  end
+
+  describe "#denominator" do
+    it "returns the denominator of a dimensionless unit (always a positive Integer)" do
+      expect(Unit(3).denominator).to eq(1)
+      expect(Unit(Rational(2, 3)).denominator).to eq(3)
+      expect(Unit(3.5).denominator).to eq(2)
+    end
+
+    it "raises RangeError for dimensional units" do
+      expect { Unit(3, "m").denominator }.to raise_error(RangeError)
+    end
+  end
+
   describe "#positive?" do
     it "returns true when value is greater than 0" do
       expect(Unit(1, "m").positive?).to be true

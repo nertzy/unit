@@ -125,6 +125,19 @@ class Unit < Numeric
     value.zero?
   end
 
+  # Converts +self+ to a +Rational+. Raises +RangeError+ for dimensional
+  # units (e.g. metres), following the same precedent as +Complex#to_r+
+  # which raises when the imaginary part is non-zero. Use +value.to_r+ to
+  # extract the bare rational without a dimension check.
+  #
+  # Defining +to_r+ gives +numerator+ and +denominator+ for free via
+  # +Numeric#numerator+ / +Numeric#denominator+, which are both
+  # implemented as <tt>self.to_r.numerator</tt> etc.
+  def to_r
+    raise RangeError, "can't convert #{self} into Rational" unless unit.empty?
+    @value.to_r
+  end
+
   # Returns +true+ if +self+ is greater than 0, +false+ otherwise.
   def positive?
     value.positive?
