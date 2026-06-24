@@ -313,7 +313,7 @@ describe 'Unit' do
 
   it 'should work with floating point values' do
     w = 5.2 * Unit('kilogram')
-    expect(w.in("pounds").to_int).to eq(11)
+    expect(w.in("pounds").value.to_i).to eq(11)
   end
 
   it 'should have dimensionless? method' do
@@ -650,15 +650,48 @@ describe 'Unit' do
   end
 
   describe "#fdiv" do
-    it "returns the float quotient when dividing by a scalar" do
-      expect(Unit(3, "m").fdiv(2)).to eq(1.5)
+    it "returns a float-valued unit when dividing by a scalar" do
+      expect(Unit(3, "m").fdiv(2)).to eq(Unit(1.5, "m"))
+    end
+
+    it "returns a dimensionless float unit for compatible units" do
+      expect(Unit(3, "m").fdiv(Unit(2, "m"))).to eq(Unit(1.5))
+    end
+
+    it "preserves the combined dimension for incompatible units" do
+      expect(Unit(3, "m").fdiv(Unit(2, "s"))).to eq(Unit(1.5, "m/s"))
+    end
+  end
+
+  describe "#to_f" do
+    it "returns the Float value for a dimensionless unit" do
+      expect(Unit(3).to_f).to eq(3.0)
+      expect(Unit(Rational(1, 4)).to_f).to eq(0.25)
+    end
+
+    it "raises RangeError for a dimensional unit" do
+      expect { Unit(3, "m").to_f }.to raise_error(RangeError, /can't convert/)
+    end
+  end
+
+  describe "#to_i" do
+    it "returns the Integer value for a dimensionless unit" do
+      expect(Unit(3).to_i).to eq(3)
+      expect(Unit(2.9).to_i).to eq(2)
+    end
+
+    it "raises RangeError for a dimensional unit" do
+      expect { Unit(3, "m").to_i }.to raise_error(RangeError, /can't convert/)
     end
   end
 
   describe "#to_int" do
-    it "returns the truncated integer value, stripping the unit" do
-      expect(Unit(2, "m").to_int).to eq(2)
-      expect(Unit(2.9, "m").to_int).to eq(2)
+    it "returns the Integer value for a dimensionless unit" do
+      expect(Unit(3).to_int).to eq(3)
+    end
+
+    it "raises RangeError for a dimensional unit" do
+      expect { Unit(2, "m").to_int }.to raise_error(RangeError, /can't convert/)
     end
   end
 

@@ -125,6 +125,14 @@ class Unit < Numeric
     value.zero?
   end
 
+  # Returns the float-valued quotient of +self+ and +other+, with the unit
+  # dimension preserved (for compatible units, the result is dimensionless).
+  # Unlike +Numeric#fdiv+, this does not strip the unit from +self+ before
+  # dividing.
+  def fdiv(other)
+    (self / other).approx
+  end
+
   # Returns the remainder after dividing +self+ by +other+. The result has
   # the same sign as +self+ (the dividend). Contrast with +modulo+/+%+,
   # whose result has the same sign as +other+ (the divisor).
@@ -252,16 +260,28 @@ class Unit < Numeric
     unit.empty? ? value.to_s : "\SI{#{value}}{#{unit_string('.')}}"
   end
 
+  # Returns the value as an Integer. Raises +RangeError+ if +self+ has a
+  # physical dimension (e.g. metres), mirroring the behaviour of
+  # <tt>Complex#to_i</tt> when the imaginary part is non-zero.
+  # Use <tt>value.to_i</tt> to extract the bare number without the check.
   def to_i
+    raise RangeError, "can't convert #{self} into Integer" unless unit.empty?
     @value.to_i
   end
 
+  # Returns the value as a Float. Raises +RangeError+ if +self+ has a
+  # physical dimension (e.g. metres), mirroring the behaviour of
+  # <tt>Complex#to_f</tt> when the imaginary part is non-zero.
+  # Use <tt>value.to_f</tt> to extract the bare number without the check.
   def to_f
+    raise RangeError, "can't convert #{self} into Float" unless unit.empty?
     @value.to_f
   end
 
+  # Returns a new Unit with the value approximated as a +Float+, preserving
+  # the unit dimension. Useful for displaying Rational-valued units as decimals.
   def approx
-    Unit.new(self.to_f, unit, system)
+    Unit.new(@value.to_f, unit, system)
   end
 
   # Returns a Unit that is a "ceiling" value for +self+, as specified by
