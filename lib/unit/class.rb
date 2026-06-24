@@ -222,8 +222,39 @@ class Unit < Numeric
     Unit.new(self.to_f, unit, system)
   end
 
-  def round(precision = 0)
-    Unit.new(value.round(precision), unit, system)
+  # Returns a Unit that is a "ceiling" value for +self+, as specified by
+  # +ndigits+. When +ndigits+ is positive, the result has +ndigits+ decimal
+  # digits after the decimal point; when negative, the result has at least
+  # <tt>ndigits.abs</tt> trailing zeros. The unit dimension is preserved.
+  def ceil(ndigits = 0)
+    Unit.new(value.ceil(ndigits), unit, system)
+  end
+
+  # Returns a Unit that is a "floor" value for +self+, as specified by
+  # +ndigits+. When +ndigits+ is positive, the result has +ndigits+ decimal
+  # digits after the decimal point; when negative, the result has at least
+  # <tt>ndigits.abs</tt> trailing zeros. The unit dimension is preserved.
+  def floor(ndigits = 0)
+    Unit.new(value.floor(ndigits), unit, system)
+  end
+
+  # Returns +self+ truncated (toward zero) to a precision of +ndigits+
+  # decimal digits. When +ndigits+ is positive, the result has +ndigits+
+  # digits after the decimal point; when negative, the result has at least
+  # <tt>ndigits.abs</tt> trailing zeros. The unit dimension is preserved.
+  def truncate(ndigits = 0)
+    Unit.new(value.truncate(ndigits), unit, system)
+  end
+
+  # Returns +self+ rounded to the nearest value with a precision of +ndigits+
+  # decimal digits (default: 0). When +ndigits+ is negative, the result has
+  # at least <tt>ndigits.abs</tt> trailing zeros. The unit dimension is
+  # preserved. If the value is equidistant from the two candidates, the
+  # +half:+ keyword controls rounding: <tt>:up</tt> (default, rounds away
+  # from zero), <tt>:down</tt> (toward zero), or <tt>:even</tt>
+  # (banker's rounding).
+  def round(ndigits = 0, **opts)
+    Unit.new(value.round(ndigits, **opts), unit, system)
   end
 
   def coerce(other)

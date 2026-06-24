@@ -377,6 +377,55 @@ describe 'Unit' do
       expect(Unit(1.2345, "m").round(1)).to eq(Unit(1.2, "m"))
       expect(Unit(5.4321, "m").round(2)).to eq(Unit(5.43, "m"))
     end
+
+    it "should support the half: keyword" do
+      expect(Unit(2.5, "m").round(half: :up)).to eq(Unit(3, "m"))
+      expect(Unit(2.5, "m").round(half: :down)).to eq(Unit(2, "m"))
+      expect(Unit(2.5, "m").round(half: :even)).to eq(Unit(2, "m"))
+      expect(Unit(3.5, "m").round(half: :even)).to eq(Unit(4, "m"))
+    end
+  end
+
+  describe "#ceil" do
+    it "should return a unit" do
+      expect(Unit(2.3, "m").ceil).to eq(Unit(3, "m"))
+      expect(Unit(-2.3, "m").ceil).to eq(Unit(-2, "m"))
+      expect(Unit(1, "m").ceil).to eq(Unit(1, "m"))
+    end
+
+    it "should respect precision" do
+      expect(Unit(2.731, "m").ceil(1)).to eq(Unit(2.8, "m"))
+      expect(Unit(2.731, "m").ceil(2)).to eq(Unit(2.74, "m"))
+      expect(Unit(23.1, "m").ceil(-1)).to eq(Unit(30, "m"))
+    end
+  end
+
+  describe "#floor" do
+    it "should return a unit" do
+      expect(Unit(2.7, "m").floor).to eq(Unit(2, "m"))
+      expect(Unit(-2.7, "m").floor).to eq(Unit(-3, "m"))
+      expect(Unit(1, "m").floor).to eq(Unit(1, "m"))
+    end
+
+    it "should respect precision" do
+      expect(Unit(2.739, "m").floor(1)).to eq(Unit(2.7, "m"))
+      expect(Unit(2.739, "m").floor(2)).to eq(Unit(2.73, "m"))
+      expect(Unit(27.9, "m").floor(-1)).to eq(Unit(20, "m"))
+    end
+  end
+
+  describe "#truncate" do
+    it "should return a unit" do
+      expect(Unit(2.7, "m").truncate).to eq(Unit(2, "m"))
+      expect(Unit(-2.7, "m").truncate).to eq(Unit(-2, "m"))
+      expect(Unit(1, "m").truncate).to eq(Unit(1, "m"))
+    end
+
+    it "should respect precision" do
+      expect(Unit(2.739, "m").truncate(1)).to eq(Unit(2.7, "m"))
+      expect(Unit(2.739, "m").truncate(2)).to eq(Unit(2.73, "m"))
+      expect(Unit(27.9, "m").truncate(-1)).to eq(Unit(20, "m"))
+    end
   end
 
 end
