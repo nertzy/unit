@@ -125,6 +125,16 @@ class Unit < Numeric
     value.zero?
   end
 
+  # Returns +true+ if +self+ is greater than 0, +false+ otherwise.
+  def positive?
+    value.positive?
+  end
+
+  # Returns +true+ if +self+ is less than 0, +false+ otherwise.
+  def negative?
+    value.negative?
+  end
+
   # Returns +true+ if +self+ is not +Infinity+, +-Infinity+, or +NaN+,
   # +false+ otherwise. Integer and Rational values are always finite.
   def finite?

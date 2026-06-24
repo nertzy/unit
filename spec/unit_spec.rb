@@ -428,6 +428,32 @@ describe 'Unit' do
     end
   end
 
+  describe "#positive?" do
+    it "returns true when value is greater than 0" do
+      expect(Unit(1, "m").positive?).to be true
+      expect(Unit(0.1, "m").positive?).to be true
+      expect(Unit(Rational(1, 3), "m").positive?).to be true
+    end
+
+    it "returns false when value is 0 or less" do
+      expect(Unit(0, "m").positive?).to be false
+      expect(Unit(-1, "m").positive?).to be false
+    end
+  end
+
+  describe "#negative?" do
+    it "returns true when value is less than 0" do
+      expect(Unit(-1, "m").negative?).to be true
+      expect(Unit(-0.1, "m").negative?).to be true
+      expect(Unit(Rational(-1, 3), "m").negative?).to be true
+    end
+
+    it "returns false when value is 0 or greater" do
+      expect(Unit(0, "m").negative?).to be false
+      expect(Unit(1, "m").negative?).to be false
+    end
+  end
+
   describe "#finite?" do
     it "returns true for finite values" do
       expect(Unit(1, "m").finite?).to be true
