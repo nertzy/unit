@@ -558,6 +558,140 @@ describe 'Unit' do
     end
   end
 
+  describe "#+@" do
+    it "returns self" do
+      u = Unit(3, "m")
+      expect(+u).to eq(u)
+    end
+  end
+
+  describe "#abs2" do
+    it "returns the square of the value with the unit squared" do
+      expect(Unit(3, "m").abs2).to eq(Unit(9, "m^2"))
+      expect(Unit(-3, "m").abs2).to eq(Unit(9, "m^2"))
+    end
+  end
+
+  describe "#nonzero?" do
+    it "returns self when the value is non-zero" do
+      u = Unit(3, "m")
+      expect(u.nonzero?).to equal(u)
+    end
+
+    it "returns nil when the value is zero" do
+      expect(Unit(0, "m").nonzero?).to be_nil
+    end
+  end
+
+  describe "#integer?" do
+    it "always returns false (Unit is not Integer)" do
+      expect(Unit(1, "m").integer?).to be false
+      expect(Unit(1).integer?).to be false
+    end
+  end
+
+  describe "#real?" do
+    it "returns true (Unit is a real numeric)" do
+      expect(Unit(1, "m").real?).to be true
+    end
+  end
+
+  describe "#real" do
+    it "returns self" do
+      u = Unit(3, "m")
+      expect(u.real).to equal(u)
+    end
+  end
+
+  describe "#imag" do
+    it "returns 0" do
+      expect(Unit(3, "m").imag).to eq(0)
+    end
+  end
+
+  describe "#conj" do
+    it "returns self" do
+      u = Unit(3, "m")
+      expect(u.conj).to equal(u)
+    end
+  end
+
+  describe "#rect" do
+    it "returns [self, 0]" do
+      u = Unit(3, "m")
+      expect(u.rect).to eq([u, 0])
+    end
+  end
+
+  describe "#modulo" do
+    it "is an alias for %" do
+      expect(Unit(7, "m").modulo(Unit(3, "m"))).to eq(Unit(7, "m") % Unit(3, "m"))
+    end
+
+    it "returns the modulus with the sign of the divisor" do
+      expect(Unit(-7, "m") % Unit(3, "m")).to eq(Unit(2, "m"))
+      expect(Unit(7, "m") % Unit(-3, "m")).to eq(Unit(-2, "m"))
+    end
+  end
+
+  describe "#divmod" do
+    it "returns [quotient, modulus] for compatible units" do
+      q, r = Unit(7, "m").divmod(Unit(2, "m"))
+      expect(q).to eq(Unit(3))
+      expect(r).to eq(Unit(1, "m"))
+    end
+
+    it "satisfies the divmod identity: self == other * q + r" do
+      dividend = Unit(7, "m")
+      divisor  = Unit(2, "m")
+      q, r = dividend.divmod(divisor)
+      expect(divisor * q + r).to eq(dividend)
+    end
+  end
+
+  describe "#fdiv" do
+    it "returns the float quotient when dividing by a scalar" do
+      expect(Unit(3, "m").fdiv(2)).to eq(1.5)
+    end
+  end
+
+  describe "#to_int" do
+    it "returns the truncated integer value, stripping the unit" do
+      expect(Unit(2, "m").to_int).to eq(2)
+      expect(Unit(2.9, "m").to_int).to eq(2)
+    end
+  end
+
+  describe "#between?" do
+    it "returns true when self is between min and max (inclusive)" do
+      expect(Unit(1, "m").between?(Unit(0, "m"), Unit(2, "m"))).to be true
+      expect(Unit(0, "m").between?(Unit(0, "m"), Unit(2, "m"))).to be true
+      expect(Unit(2, "m").between?(Unit(0, "m"), Unit(2, "m"))).to be true
+    end
+
+    it "returns false when self is outside the range" do
+      expect(Unit(3, "m").between?(Unit(0, "m"), Unit(2, "m"))).to be false
+    end
+  end
+
+  describe "#clamp" do
+    it "returns self when within the range" do
+      expect(Unit(1, "m").clamp(Unit(0, "m"), Unit(2, "m"))).to eq(Unit(1, "m"))
+    end
+
+    it "returns the minimum when below the range" do
+      expect(Unit(-1, "m").clamp(Unit(0, "m"), Unit(2, "m"))).to eq(Unit(0, "m"))
+    end
+
+    it "returns the maximum when above the range" do
+      expect(Unit(5, "m").clamp(Unit(0, "m"), Unit(2, "m"))).to eq(Unit(2, "m"))
+    end
+
+    it "accepts a Range argument" do
+      expect(Unit(5, "m").clamp(Unit(0, "m")..Unit(2, "m"))).to eq(Unit(2, "m"))
+    end
+  end
+
 end
 
 describe "Unit DSL", dsl: true do
