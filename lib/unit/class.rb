@@ -144,6 +144,10 @@ class Unit < Numeric
     Unit === other && value.eql?(other.value) && unit == other.unit
   end
 
+  def hash
+    [self.class, value, unit].hash
+  end
+
   # Raises +ArgumentError+ when both operands are +Numeric+ but have
   # incompatible dimensions (e.g. metres vs seconds); returns +nil+ for
   # non-+Numeric+, non-coerceable objects. This split honours Ruby's +<=>+

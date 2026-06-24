@@ -138,6 +138,34 @@ describe 'Unit' do
     expect(Unit(1.0)).not_to eql(UnitOne.new)
   end
 
+  describe "#hash" do
+    it "satisfies the eql?/hash contract: equal units have identical hash codes" do
+      expect(Unit(1, 'm').hash).to eq(Unit(1, 'm').hash)
+      expect(Unit(1).hash).to eq(Unit(1).hash)
+      expect(Unit(Rational(1, 2), 'm').hash).to eq(Unit(Rational(1, 2), 'm').hash)
+      expect(Unit(1.5, 'm').hash).to eq(Unit(1.5, 'm').hash)
+    end
+
+    it "is usable as a Hash key" do
+      h = {}
+      h[Unit(1, 'm')] = 'one meter'
+      expect(h[Unit(1, 'm')]).to eq('one meter')
+    end
+
+    it "is usable in a Set" do
+      require 'set'
+      s = Set.new([Unit(1, 'm'), Unit(2, 'm'), Unit(1, 'm')])
+      expect(s.size).to eq(2)
+      expect(s).to include(Unit(1, 'm'))
+    end
+
+    it "differs for units that are not eql?" do
+      expect(Unit(1, 'm').hash).not_to eq(Unit(2, 'm').hash)
+      expect(Unit(1, 'm').hash).not_to eq(Unit(1, 's').hash)
+      expect(Unit(1, 'm').hash).not_to eq(Unit(1.0, 'm').hash)
+    end
+  end
+
   it "should not support adding anything but numeric unless object is coerceable" do
     expect { Unit(1) + 'string'}.to raise_error(TypeError)
     expect { Unit(1) + []}.to raise_error(TypeError)
