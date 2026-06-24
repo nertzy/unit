@@ -125,6 +125,18 @@ class Unit < Numeric
     value.zero?
   end
 
+  # Returns +true+ if +self+ is not +Infinity+, +-Infinity+, or +NaN+,
+  # +false+ otherwise. Integer and Rational values are always finite.
+  def finite?
+    value.respond_to?(:finite?) ? value.finite? : true
+  end
+
+  # Returns +1+ if +self+ is +Infinity+, +-1+ if +-Infinity+, or +nil+
+  # otherwise. Integer and Rational values are never infinite.
+  def infinite?
+    value.respond_to?(:infinite?) ? value.infinite? : nil
+  end
+
   # Returns +false+ for any object that is neither +Numeric+ nor coerceable,
   # rather than raising. This keeps mixed-type equality checks safe (e.g.
   # comparing against +nil+, strings, or arbitrary objects).

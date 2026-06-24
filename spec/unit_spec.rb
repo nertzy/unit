@@ -428,6 +428,40 @@ describe 'Unit' do
     end
   end
 
+  describe "#finite?" do
+    it "returns true for finite values" do
+      expect(Unit(1, "m").finite?).to be true
+      expect(Unit(0, "m").finite?).to be true
+      expect(Unit(-1.5, "m").finite?).to be true
+      expect(Unit(Rational(1, 3), "m").finite?).to be true
+    end
+
+    it "returns false for +Infinity" do
+      expect(Unit(Float::INFINITY, "m").finite?).to be false
+    end
+
+    it "returns false for -Infinity" do
+      expect(Unit(-Float::INFINITY, "m").finite?).to be false
+    end
+  end
+
+  describe "#infinite?" do
+    it "returns nil for finite values" do
+      expect(Unit(1, "m").infinite?).to be_nil
+      expect(Unit(0, "m").infinite?).to be_nil
+      expect(Unit(-1.5, "m").infinite?).to be_nil
+      expect(Unit(Rational(1, 3), "m").infinite?).to be_nil
+    end
+
+    it "returns 1 for +Infinity" do
+      expect(Unit(Float::INFINITY, "m").infinite?).to eq(1)
+    end
+
+    it "returns -1 for -Infinity" do
+      expect(Unit(-Float::INFINITY, "m").infinite?).to eq(-1)
+    end
+  end
+
 end
 
 describe "Unit DSL", dsl: true do
