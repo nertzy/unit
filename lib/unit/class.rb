@@ -125,6 +125,13 @@ class Unit < Numeric
     value.zero?
   end
 
+  # Returns the remainder after dividing +self+ by +other+. The result has
+  # the same sign as +self+ (the dividend). Contrast with +modulo+/+%+,
+  # whose result has the same sign as +other+ (the divisor).
+  def remainder(other)
+    self - (self / other).truncate * other
+  end
+
   # Converts +self+ to a +Rational+. Raises +RangeError+ for dimensional
   # units (e.g. metres), following the same precedent as +Complex#to_r+
   # which raises when the imaginary part is non-zero. Use +value.to_r+ to

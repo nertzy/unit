@@ -428,6 +428,24 @@ describe 'Unit' do
     end
   end
 
+  describe "#remainder" do
+    it "returns the remainder with the sign of the dividend" do
+      expect(Unit(11, "m").remainder(Unit(4, "m"))).to eq(Unit(3, "m"))
+      expect(Unit(-11, "m").remainder(Unit(4, "m"))).to eq(Unit(-3, "m"))
+      expect(Unit(11, "m").remainder(Unit(-4, "m"))).to eq(Unit(3, "m"))
+      expect(Unit(-11, "m").remainder(Unit(-4, "m"))).to eq(Unit(-3, "m"))
+    end
+
+    it "returns zero when evenly divisible" do
+      expect(Unit(12, "m").remainder(Unit(4, "m"))).to eq(Unit(0, "m"))
+    end
+
+    it "differs from modulo for negative values" do
+      expect(Unit(-11, "m") % Unit(4, "m")).to eq(Unit(1, "m"))   # modulo: sign of divisor
+      expect(Unit(-11, "m").remainder(Unit(4, "m"))).to eq(Unit(-3, "m")) # remainder: sign of dividend
+    end
+  end
+
   describe "#to_r" do
     it "converts a dimensionless unit to Rational" do
       expect(Unit(3).to_r).to eq(Rational(3))
@@ -440,7 +458,6 @@ describe 'Unit' do
       expect { Unit(1.5, "m/s").to_r }.to raise_error(RangeError)
     end
   end
-
   describe "#numerator" do
     it "returns the numerator of a dimensionless unit" do
       expect(Unit(3).numerator).to eq(3)
