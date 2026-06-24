@@ -428,6 +428,22 @@ describe 'Unit' do
     end
   end
 
+  describe "#div" do
+    it "returns the floored integer quotient as a dimensionless unit for compatible units" do
+      expect(Unit(7, "m").div(Unit(2, "m"))).to eq(Unit(3))
+      expect(Unit(-7, "m").div(Unit(2, "m"))).to eq(Unit(-4))
+    end
+
+    it "returns a unit with the combined dimension for incompatible units" do
+      expect(Unit(7, "m").div(Unit(2, "s"))).to eq(Unit(3, "m/s"))
+    end
+
+    it "preserves the unit when dividing by a plain number" do
+      expect(Unit(7, "m").div(2)).to eq(Unit(3, "m"))
+      expect(Unit(-7, "m").div(2)).to eq(Unit(-4, "m"))
+    end
+  end
+
   describe "#remainder" do
     it "returns the remainder with the sign of the dividend" do
       expect(Unit(11, "m").remainder(Unit(4, "m"))).to eq(Unit(3, "m"))
