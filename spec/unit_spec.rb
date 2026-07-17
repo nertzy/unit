@@ -591,35 +591,62 @@ describe 'Unit' do
   end
 
   describe "#real?" do
-    it "returns true (Unit is a real numeric)" do
+    it "returns true for a real-valued unit" do
       expect(Unit(1, "m").real?).to be true
+      expect(Unit(1.5, "m").real?).to be true
+      expect(Unit(Rational(1, 2), "m").real?).to be true
+    end
+
+    it "returns false for a complex-valued unit" do
+      expect(Unit(Complex(0, 1), "ohm").real?).to be false
+      expect(Unit(Complex(3, 4), "ohm").real?).to be false
     end
   end
 
   describe "#real" do
-    it "returns self" do
+    it "returns self for a real-valued unit" do
       u = Unit(3, "m")
       expect(u.real).to equal(u)
+    end
+
+    it "returns the real part as a Unit for a complex-valued unit" do
+      expect(Unit(Complex(3, 4), "ohm").real).to eq(Unit(3, "ohm"))
+      expect(Unit(Complex(0, 1), "ohm").real).to eq(Unit(0, "ohm"))
     end
   end
 
   describe "#imag" do
-    it "returns 0" do
+    it "returns 0 for a real-valued unit" do
       expect(Unit(3, "m").imag).to eq(0)
+    end
+
+    it "returns the imaginary part as a Unit for a complex-valued unit" do
+      expect(Unit(Complex(3, 4), "ohm").imag).to eq(Unit(4, "ohm"))
+      expect(Unit(Complex(0, 1), "ohm").imag).to eq(Unit(1, "ohm"))
     end
   end
 
   describe "#conj" do
-    it "returns self" do
+    it "returns self for a real-valued unit" do
       u = Unit(3, "m")
       expect(u.conj).to equal(u)
+    end
+
+    it "returns the complex conjugate with unit preserved" do
+      expect(Unit(Complex(3, 4), "ohm").conj).to eq(Unit(Complex(3, -4), "ohm"))
+      expect(Unit(Complex(0, 1), "ohm").conj).to eq(Unit(Complex(0, -1), "ohm"))
     end
   end
 
   describe "#rect" do
-    it "returns [self, 0]" do
+    it "returns [self, 0] for a real-valued unit" do
       u = Unit(3, "m")
       expect(u.rect).to eq([u, 0])
+    end
+
+    it "returns [real_unit, imag_unit] for a complex-valued unit" do
+      u = Unit(Complex(3, 4), "ohm")
+      expect(u.rect).to eq([Unit(3, "ohm"), Unit(4, "ohm")])
     end
   end
 

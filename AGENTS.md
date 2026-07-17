@@ -41,6 +41,15 @@ conversions, and expression parsing (`Unit('1 m/s^2')`), plus an optional DSL
   `binary`, `degree`, and `time`; `scientific`, `imperial`, and `misc` are
   available on demand.
 
+## Design goals
+
+- **Complex-valued units are a supported use case.** Impedance in electrical
+  engineering is a complex-valued quantity (ohms), phasors in signal processing
+  are complex-valued, and so on. `Unit(Complex(3, 4), 'ohm')` is valid.
+  Methods that distinguish real from complex (`real?`, `real`, `imag`, `conj`,
+  `rect`) must delegate to the value rather than unconditionally returning
+  the `Numeric` defaults. Keep this in mind when adding new numeric methods.
+
 ## Things to know before editing
 
 - **`Unit` is a `Numeric` subclass, and modern Ruby treats numerics as immutable

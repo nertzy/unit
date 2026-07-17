@@ -121,6 +121,47 @@ class Unit < Numeric
     Unit.new(value.abs, unit, system)
   end
 
+  # Returns +false+ if the value is a +Complex+ with a non-zero imaginary
+  # part, +true+ otherwise. Overrides +Numeric#real?+ which unconditionally
+  # returns +true+.
+  def real?
+    value.real?
+  end
+
+  # Returns the real part of +self+ as a +Unit+. For real-valued units
+  # returns +self+; for complex-valued units returns a new unit wrapping
+  # the real component.
+  def real
+    return self if value.real?
+    Unit.new(value.real, unit, system)
+  end
+
+  # Returns the imaginary part of +self+ as a +Unit+. For real-valued
+  # units returns +0+ (matching +Numeric#imag+); for complex-valued units
+  # returns a new unit wrapping the imaginary component.
+  def imag
+    return 0 if value.real?
+    Unit.new(value.imag, unit, system)
+  end
+  alias imaginary imag
+
+  # Returns the complex conjugate of +self+ with the unit preserved. For
+  # real-valued units returns +self+ (matching +Numeric#conj+); for
+  # complex-valued units negates the imaginary part.
+  def conj
+    return self if value.real?
+    Unit.new(value.conj, unit, system)
+  end
+  alias conjugate conj
+
+  # Returns a two-element array <tt>[real, imaginary]</tt> with the unit
+  # preserved on each component. For real-valued units returns
+  # <tt>[self, 0]</tt> (matching +Numeric#rect+).
+  def rect
+    [real, imag]
+  end
+  alias rectangular rect
+
   def zero?
     value.zero?
   end
