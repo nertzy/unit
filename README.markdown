@@ -28,6 +28,18 @@ Examples
     Unit(5.5, 'feet') / 2 == Unit(2.75, 'feet')
     Unit(2, 'm') ** 2 == Unit(4, 'm^2')
 
+### Complex-valued units
+
+Units with complex values are supported for domains such as electrical
+impedance and signal processing:
+
+    z = Unit(Complex(3, 4), 'ohm')   # 3+4i Ω
+    z.abs                            # => Unit("5.0 Ω")  (magnitude)
+    z.real                           # => Unit("3 Ω")
+    z.imag                           # => Unit("4 Ω")
+    z.conj                           # => Unit("3-4i Ω")
+    z.real?                          # => false
+
 ### Conversions
 
     Unit(1, 'mile').in('km') == Unit(1.609344,  'km')

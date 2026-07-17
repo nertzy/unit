@@ -121,8 +121,99 @@ class Unit < Numeric
     Unit.new(value.abs, unit, system)
   end
 
+  # Returns +false+ if the value is a +Complex+ with a non-zero imaginary
+  # part, +true+ otherwise. Overrides +Numeric#real?+ which unconditionally
+  # returns +true+.
+  def real?
+    value.real?
+  end
+
+  # Returns the real part of +self+ as a +Unit+. For real-valued units
+  # returns +self+; for complex-valued units returns a new unit wrapping
+  # the real component.
+  def real
+    return self if value.real?
+    Unit.new(value.real, unit, system)
+  end
+
+  # Returns the imaginary part of +self+ as a +Unit+. For real-valued
+  # units returns +0+ (matching +Numeric#imag+); for complex-valued units
+  # returns a new unit wrapping the imaginary component.
+  def imag
+    return 0 if value.real?
+    Unit.new(value.imag, unit, system)
+  end
+  alias imaginary imag
+
+  # Returns the complex conjugate of +self+ with the unit preserved. For
+  # real-valued units returns +self+ (matching +Numeric#conj+); for
+  # complex-valued units negates the imaginary part.
+  def conj
+    return self if value.real?
+    Unit.new(value.conj, unit, system)
+  end
+  alias conjugate conj
+
+  # Returns a two-element array <tt>[real, imaginary]</tt> with the unit
+  # preserved on each component. For real-valued units returns
+  # <tt>[self, 0]</tt> (matching +Numeric#rect+).
+  def rect
+    [real, imag]
+  end
+  alias rectangular rect
+
   def zero?
     value.zero?
+  end
+
+  # Returns the float-valued quotient of +self+ and +other+, with the unit
+  # dimension preserved (for compatible units, the result is dimensionless).
+  # Unlike +Numeric#fdiv+, this does not strip the unit from +self+ before
+  # dividing.
+  def fdiv(other)
+    (self / other).approx
+  end
+
+  # Returns the remainder after dividing +self+ by +other+. The result has
+  # the same sign as +self+ (the dividend). Contrast with +modulo+/+%+,
+  # whose result has the same sign as +other+ (the divisor).
+  def remainder(other)
+    self - (self / other).truncate * other
+  end
+
+  # Converts +self+ to a +Rational+. Raises +RangeError+ for dimensional
+  # units (e.g. metres), following the same precedent as +Complex#to_r+
+  # which raises when the imaginary part is non-zero. Use +value.to_r+ to
+  # extract the bare rational without a dimension check.
+  #
+  # Defining +to_r+ gives +numerator+ and +denominator+ for free via
+  # +Numeric#numerator+ / +Numeric#denominator+, which are both
+  # implemented as <tt>self.to_r.numerator</tt> etc.
+  def to_r
+    raise RangeError, "can't convert #{self} into Rational" unless unit.empty?
+    @value.to_r
+  end
+
+  # Returns +true+ if +self+ is greater than 0, +false+ otherwise.
+  def positive?
+    value.positive?
+  end
+
+  # Returns +true+ if +self+ is less than 0, +false+ otherwise.
+  def negative?
+    value.negative?
+  end
+
+  # Returns +true+ if +self+ is not +Infinity+, +-Infinity+, or +NaN+,
+  # +false+ otherwise. Integer and Rational values are always finite.
+  def finite?
+    value.respond_to?(:finite?) ? value.finite? : true
+  end
+
+  # Returns +1+ if +self+ is +Infinity+, +-1+ if +-Infinity+, or +nil+
+  # otherwise. Integer and Rational values are never infinite.
+  def infinite?
+    value.respond_to?(:infinite?) ? value.infinite? : nil
   end
 
   # Returns +false+ for any object that is neither +Numeric+ nor coerceable,
@@ -142,6 +233,10 @@ class Unit < Numeric
 
   def eql?(other)
     Unit === other && value.eql?(other.value) && unit == other.unit
+  end
+
+  def hash
+    [self.class, value, unit].hash
   end
 
   # Raises +ArgumentError+ when both operands are +Numeric+ but have
@@ -206,20 +301,63 @@ class Unit < Numeric
     unit.empty? ? value.to_s : "\SI{#{value}}{#{unit_string('.')}}"
   end
 
+  # Returns the value as an Integer. Raises +RangeError+ if +self+ has a
+  # physical dimension (e.g. metres), mirroring the behaviour of
+  # <tt>Complex#to_i</tt> when the imaginary part is non-zero.
+  # Use <tt>value.to_i</tt> to extract the bare number without the check.
   def to_i
+    raise RangeError, "can't convert #{self} into Integer" unless unit.empty?
     @value.to_i
   end
 
+  # Returns the value as a Float. Raises +RangeError+ if +self+ has a
+  # physical dimension (e.g. metres), mirroring the behaviour of
+  # <tt>Complex#to_f</tt> when the imaginary part is non-zero.
+  # Use <tt>value.to_f</tt> to extract the bare number without the check.
   def to_f
+    raise RangeError, "can't convert #{self} into Float" unless unit.empty?
     @value.to_f
   end
 
+  # Returns a new Unit with the value approximated as a +Float+, preserving
+  # the unit dimension. Useful for displaying Rational-valued units as decimals.
   def approx
-    Unit.new(self.to_f, unit, system)
+    Unit.new(@value.to_f, unit, system)
   end
 
-  def round(precision = 0)
-    Unit.new(value.round(precision), unit, system)
+  # Returns a Unit that is a "ceiling" value for +self+, as specified by
+  # +ndigits+. When +ndigits+ is positive, the result has +ndigits+ decimal
+  # digits after the decimal point; when negative, the result has at least
+  # <tt>ndigits.abs</tt> trailing zeros. The unit dimension is preserved.
+  def ceil(ndigits = 0)
+    Unit.new(value.ceil(ndigits), unit, system)
+  end
+
+  # Returns a Unit that is a "floor" value for +self+, as specified by
+  # +ndigits+. When +ndigits+ is positive, the result has +ndigits+ decimal
+  # digits after the decimal point; when negative, the result has at least
+  # <tt>ndigits.abs</tt> trailing zeros. The unit dimension is preserved.
+  def floor(ndigits = 0)
+    Unit.new(value.floor(ndigits), unit, system)
+  end
+
+  # Returns +self+ truncated (toward zero) to a precision of +ndigits+
+  # decimal digits. When +ndigits+ is positive, the result has +ndigits+
+  # digits after the decimal point; when negative, the result has at least
+  # <tt>ndigits.abs</tt> trailing zeros. The unit dimension is preserved.
+  def truncate(ndigits = 0)
+    Unit.new(value.truncate(ndigits), unit, system)
+  end
+
+  # Returns +self+ rounded to the nearest value with a precision of +ndigits+
+  # decimal digits (default: 0). When +ndigits+ is negative, the result has
+  # at least <tt>ndigits.abs</tt> trailing zeros. The unit dimension is
+  # preserved. If the value is equidistant from the two candidates, the
+  # +half:+ keyword controls rounding: <tt>:up</tt> (default, rounds away
+  # from zero), <tt>:down</tt> (toward zero), or <tt>:even</tt>
+  # (banker's rounding).
+  def round(ndigits = 0, **opts)
+    Unit.new(value.round(ndigits, **opts), unit, system)
   end
 
   def coerce(other)
