@@ -754,6 +754,46 @@ describe 'Unit' do
 
 end
 
+describe "Unit() with exception: false" do
+  it "returns a Unit normally for valid input" do
+    expect(Unit('m', exception: false)).to eq(Unit(1, 'm'))
+    expect(Unit(3.5, 'm/s', exception: false)).to eq(Unit(3.5, 'm/s'))
+    expect(Unit(1, 2, 'm', exception: false)).to eq(Unit(Rational(1, 2), 'm'))
+    expect(Unit('', exception: false)).to eq(Unit(1))
+  end
+
+  it "returns nil for an unknown unit" do
+    expect(Unit('flarb', exception: false)).to be_nil
+    expect(Unit(1, 'flarb', exception: false)).to be_nil
+  end
+
+  it "returns nil for a malformed expression" do
+    expect(Unit('m)', exception: false)).to be_nil
+    expect(Unit('m/(', exception: false)).to be_nil
+  end
+
+  it "still raises for ArgumentError (wrong number of arguments)" do
+    expect { Unit(1, 2, 3, 'm', exception: false) }.to raise_error(ArgumentError)
+  end
+end
+
+describe "Unit.valid_unit?" do
+  it "returns true for a valid unit string" do
+    expect(Unit.valid_unit?('m')).to be true
+    expect(Unit.valid_unit?('km/h')).to be true
+    expect(Unit.valid_unit?('')).to be true
+  end
+
+  it "returns false for an unknown or malformed unit string" do
+    expect(Unit.valid_unit?('flarb')).to be false
+    expect(Unit.valid_unit?('m)')).to be false
+  end
+
+  it "accepts an explicit system" do
+    expect(Unit.valid_unit?('m', Unit.default_system)).to be true
+  end
+end
+
 describe "Unit DSL", dsl: true do
   it 'should provide method sugar' do
     expect(1.meter).to eq(Unit('1 meter'))

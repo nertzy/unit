@@ -516,5 +516,32 @@ class Unit < Numeric
         numeric_to_unit(object, system)
       end
     end
+
+    # call-seq:
+    #   Unit.valid_unit?(unit, system = Unit.default_system) -> true or false
+    #
+    # Returns +true+ if +unit+ is a valid unit expression in +system+,
+    # +false+ otherwise. Validity is always relative to a system — a unit
+    # that exists in one system may be unknown in another.
+    #
+    #   Unit.valid_unit?('km/h')   # => true
+    #   Unit.valid_unit?('')       # => true   (dimensionless)
+    #   Unit.valid_unit?('smoot')  # => false
+    #   Unit.valid_unit?('m)')     # => false  (malformed)
+    #
+    # The default system is SI. Imperial units are not loaded by default:
+    #
+    #   Unit.valid_unit?('foot')   # => false
+    #   Unit.default_system.load(:imperial)
+    #   Unit.valid_unit?('foot')   # => true
+    #
+    # Pass an explicit system to validate against a specific context:
+    #
+    #   si = Unit.default_system
+    #   Unit.valid_unit?('m', si)     # => true
+    #   Unit.valid_unit?('foot', si)  # => false  (foot is not in SI)
+    def valid_unit?(unit, system = nil)
+      !Unit(unit, *[system].compact, exception: false).nil?
+    end
   end
 end
