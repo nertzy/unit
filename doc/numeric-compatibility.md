@@ -15,6 +15,26 @@ implementation does when it calls back into `Unit` — often `<=>`, `to_i`, or
 
 ---
 
+## Design goal: Complex-valued units
+
+Units with complex scalar values are explicitly supported. Electrical impedance,
+phasors, and similar quantities are dimensional values with complex scalars:
+
+```ruby
+z = Unit(Complex(3, 4), 'ohm')
+z.abs    # => Unit("5.0 Ω")
+z.real   # => Unit("3 Ω")
+z.imag   # => Unit("4 Ω")
+z.conj   # => Unit("3-4i Ω")
+z.real?  # => false
+```
+
+Methods that distinguish real from complex (`real?`, `real`, `imag`, `conj`,
+`rect`) must delegate to `value` rather than returning `Numeric`'s unconditional
+real-only defaults.
+
+---
+
 ## Methods Unit explicitly overrides
 
 These exist in `lib/unit/class.rb` and have test coverage:
@@ -23,62 +43,61 @@ These exist in `lib/unit/class.rb` and have test coverage:
 |---|---|
 | `*`, `/`, `+`, `-`, `**`, `-@`, `+@` | Arithmetic — well-tested |
 | `==`, `eql?`, `<=>` | Equality and ordering — well-tested, including edge cases |
-| `hash` | Defined as `[value, unit].hash` — satisfies `eql?`/`hash` contract |
-| `abs` | Preserves unit |
+| `hash` | `[self.class, value, unit].hash` — satisfies `eql?`/`hash` contract; `self.class` prevents bucket collisions with plain arrays of the same shape |
+| `abs` | Preserves unit; for complex values delegates to `value.abs` (gives magnitude) |
+| `real?` | Delegates to `value.real?` — `false` for complex-valued units |
+| `real` | Returns `self` for real values; `Unit(value.real, unit)` for complex |
+| `imag` / `imaginary` | Returns `0` for real values; `Unit(value.imag, unit)` for complex |
+| `conj` / `conjugate` | Returns `self` for real values; `Unit(value.conj, unit)` for complex |
+| `rect` / `rectangular` | Returns `[real, imag]` — unit-preserving in both components |
 | `zero?`, `positive?`, `negative?` | Delegate to `value` |
-| `numerator`, `denominator` | Delegate to `value` |
 | `finite?`, `infinite?` | Delegate to `value` when `value` responds; correct fallbacks otherwise |
+| `numerator`, `denominator` | Inherited from `Numeric` via `to_r` (see below) |
+| `to_r` | Raises `RangeError` for dimensional units (Complex precedent); converts normally for dimensionless; gives `numerator`/`denominator` for free |
+| `to_i`, `to_f` | Raise `RangeError` for dimensional units (Complex precedent); convert normally for dimensionless |
 | `remainder` | Explicit implementation: `self - (self / other).truncate * other` |
 | `ceil`, `floor`, `truncate` | Override to preserve unit; accept `ndigits` argument |
 | `round` | Preserves unit; accepts `ndigits` and `half:` keyword |
-| `to_i`, `to_f` | Strip unit, return bare numeric |
+| `fdiv` | Returns `(self / other).approx` — unit-preserving with float value; fixes inherited `Numeric#fdiv` which called `self.to_f` (now raises for dimensional units) |
 | `coerce` | Enables Integer/Float on left-hand side |
 | `dup`, `initialize_copy`, `freeze` | Immutability contract — tested |
 | `inspect`, `to_s`, `to_tex` | Formatting |
-| `approx` | Returns Float-valued unit |
+| `approx` | Returns Float-valued unit via `@value.to_f` |
 
 ---
 
 ## Inherited Numeric methods — behaviour inventory
 
-### Group 1: Work correctly, with tests
-
-These were previously untested; coverage was added alongside the bug fixes.
+### Group 1: Inherited, work correctly, with tests
 
 | Method | Behaviour | Notes |
 |---|---|---|
 | `+@` | Returns `self` | |
-| `abs2` | Returns `Unit(value**2, unit**2)` — e.g. `Unit(3,'m').abs2 == Unit(9,'m^2')` | Dimensionally correct via `self * self.conj` |
+| `abs2` | `Unit(value.abs2, unit**2)` — e.g. `Unit(3,'m').abs2 == Unit(9,'m^2')`; for complex values gives `\|z\|² · unit²` | Correct: `self * self.conj` |
 | `nonzero?` | Returns `self` or `nil` | |
 | `integer?` | Always `false` | `Unit` is not `Integer` |
-| `real?` | Always `true` | |
-| `real` | Returns `self` | |
-| `imag` / `imaginary` | Returns `0` | |
-| `conj` / `conjugate` | Returns `self` | |
-| `rect` / `rectangular` | Returns `[self, 0]` | |
 | `modulo` / `%` | Preserves unit; result sign matches divisor | |
 | `divmod` | Returns `[floored_quotient, remainder]`; quotient is dimensionless for compatible units | |
-| `div` | Floored integer quotient; compatible units → dimensionless; incompatible → combined dimension | Unit-preserving as side-effect of overriding `floor` |
-| `fdiv(scalar)` | Returns bare `Float` (unit stripped) — e.g. `Unit(3,'m').fdiv(2) => 1.5` | See note below |
-| `to_int` | Strips unit, returns `Integer` (same as `to_i`) | |
+| `div` | Floored integer quotient; compatible units → dimensionless `Unit`; incompatible → combined dimension `Unit` | Unit-preserving as side-effect of `floor` override |
+| `to_int` | Raises `RangeError` for dimensional units (calls `to_i` internally) | |
 | `between?` | Works via `<=>` | |
 | `clamp` | Works for both two-arg and Range forms | |
 
 ---
 
-### Group 2: Work correctly, still untested
+### Group 2: Inherited, work correctly, no tests yet
 
 | Method | Behaviour | Notes |
 |---|---|---|
-| `to_c` | Returns `(Unit("3 m")+0i)` | Works via `Numeric#to_c`; unit ends up inside the complex |
-| `clone` | Returns a distinct copy (not `self`) | Unlike `dup` on a plain Numeric; `Unit` overrides `initialize_copy` so clone behaves normally |
+| `to_c` | Returns `Complex`-wrapped unit value | Works via `Numeric#to_c`; unit ends up inside the complex |
+| `clone` | Returns a distinct copy | `Unit` overrides `initialize_copy` so clone works normally |
 
-`Kernel` conversion functions work and strip the unit:
+`Kernel` conversion functions strip the unit and return a bare numeric:
 
 ```ruby
-Float(Unit(3.5, 'm'))    # => 3.5    (bare Float)
-Integer(Unit(3, 'm'))    # => 3      (bare Integer)
-Rational(Unit(3, 'm'))   # => (3/1)  (bare Rational)
+Float(Unit(3.5, 'm'))    # => 3.5    (bare Float — raises for dimensional same as to_f)
+Integer(Unit(3, 'm'))    # => 3      (bare Integer — raises for dimensional same as to_i)
+Rational(Unit(3, 'm'))   # => (3/1)  (bare Rational — raises for dimensional same as to_r)
 ```
 
 No tests for any of these.
@@ -87,33 +106,19 @@ No tests for any of these.
 
 ### Group 3: Known remaining issues
 
-#### `fdiv` with a Unit divisor returns a wrong dimension
-
-`Numeric#fdiv` is implemented as `self.to_f / other`. `to_f` strips the unit
-from `self` (yielding e.g. `3.0`), then `3.0 / Unit(2.0,'m')` goes through
-coerce, producing `Unit(1.5, 'm^-1')` instead of the correct `1.5`:
-
-```ruby
-Unit(3, 'm').fdiv(Unit(2, 'm'))    # => Unit("1.5 m^-1")  ← wrong (should be 1.5)
-Unit(3, 'm').fdiv(2)               # => 1.5               ← correct
-```
-
-`fdiv` should be overridden to delegate to `(self / other).to_f` for the unit
-case, or restricted to scalar divisors only.
-
 #### `magnitude` raises but `abs` works — asymmetry
 
-`abs` is overridden in `Unit` and works correctly. `magnitude` is inherited from
-`Numeric` (it is an alias for `abs` in `Numeric` but `Numeric#magnitude` calls
-`abs` on `self`, which goes through `<=>` internally on some paths) and raises
-`ArgumentError` for dimensional units:
+`abs` is overridden and works correctly for both real and complex values.
+`magnitude` is an alias for `abs` in `Numeric` but is not inherited as an alias
+in `Unit` — it falls through to `Numeric#magnitude` which calls `abs` via a
+path that internally uses `<=>`, raising `ArgumentError` for dimensional units:
 
 ```ruby
 Unit(3, 'm').abs        # => Unit("3 m")   ✓
 Unit(3, 'm').magnitude  # => ArgumentError ✗
 ```
 
-The fix is to alias `magnitude` to `abs` in `Unit`.
+Fix: `alias magnitude abs` in `Unit`.
 
 #### `step` raises for dimensional units
 
@@ -125,8 +130,8 @@ Unit(0, 'm').step(Unit(3, 'm'), Unit(1, 'm')) { }
 # => ArgumentError: comparison of Unit("1 m") with Integer failed
 ```
 
-This could be fixed by overriding `step` to work directly on the value while
-re-wrapping each yielded result, or by documenting it as unsupported.
+Could be fixed by overriding `step` to iterate on the bare value and re-wrap
+each yielded result, or documented as unsupported.
 
 #### `angle` / `arg` / `phase` / `polar` raise for dimensional units
 
@@ -139,7 +144,9 @@ Unit(3, 'm').polar    # => ArgumentError
 
 For dimensionless units they work correctly. These are arguably correct
 behaviour — a dimensional quantity doesn't have a phase angle — but they should
-have tests confirming the error and documenting the intent.
+have tests confirming the error and documenting the intent. Note: for
+*complex-valued* dimensional units, `angle` and `polar` are well-defined;
+this is a separate issue from the dimensional-scalar case.
 
 ---
 
@@ -150,7 +157,7 @@ error should be added so the behaviour is explicit and can't regress silently:
 
 | Method | Behaviour |
 |---|---|
-| `angle` / `arg` / `phase` | `ArgumentError` — dimensional `<=>` 0 fails |
+| `angle` / `arg` / `phase` | `ArgumentError` — dimensional `<=>` 0 fails (real-valued units) |
 | `magnitude` | `ArgumentError` — should be aliased to `abs` (see above) |
 | `polar` | `ArgumentError` — calls `angle` internally |
 | `step` | `ArgumentError` — compares step value with `Integer` |
@@ -159,29 +166,31 @@ error should be added so the behaviour is explicit and can't regress silently:
 
 ---
 
-## Summary of issues (current state)
+## Summary of issues
 
 ### Fixed
 
-| # | Method(s) | Fix applied |
+| # | Method(s) | Fix |
 |---|---|---|
-| 1 | `hash` | Defined as `[value, unit].hash` |
+| 1 | `hash` | `[self.class, value, unit].hash` — satisfies `eql?`/`hash` contract |
 | 2 | `ceil`, `floor`, `truncate` | Overridden to preserve unit; consistent with `round` |
-| 3 | `finite?`, `infinite?` | Overridden to delegate to `value` |
-| 4 | `positive?`, `negative?` | Overridden to delegate to `value` |
-| 5 | `numerator`, `denominator` | Overridden to delegate to `value` |
+| 3 | `finite?`, `infinite?` | Delegate to `value` |
+| 4 | `positive?`, `negative?` | Delegate to `value` |
+| 5 | `numerator`, `denominator` | Fixed by defining `to_r`; both work via `Numeric#numerator` → `self.to_r` |
 | 6 | `remainder` | Explicit implementation using `truncate` |
-| 7 | `div` with incompatible units | Fixed as side-effect of `floor` override |
-| 8 | `round(half:)` | Fixed — `round` now accepts `**opts` |
+| 7 | `div` silent unit loss | Fixed as side-effect of `floor` override |
+| 8 | `round(half:)` | `round` now forwards all args |
+| 9 | `to_i` / `to_f` silent unit strip | Now raise `RangeError` for dimensional units (Complex precedent) |
+| 10 | `fdiv` wrong dimension | Overridden as `(self / other).approx` |
+| 11 | `real?`, `real`, `imag`, `conj`, `rect` | Delegate to `value` — correct for complex-valued units |
 
 ### Open
 
 | # | Method(s) | Severity | Proposed fix |
 |---|---|---|---|
-| 9 | `fdiv` with Unit divisor | **Medium** — wrong dimension in result | Override `fdiv` to use `(self/other).to_f` |
-| 10 | `magnitude` vs `abs` | **Low** — asymmetric; magnitude raises | `alias_method :magnitude, :abs` |
-| 11 | `step` | **Low** — raises for all dimensional units | Override or document as unsupported |
-| 12 | `angle`/`arg`/`phase`/`polar` | **Low** — raise, arguably correct | Add confirming tests |
+| 12 | `magnitude` vs `abs` | **Low** — asymmetric; magnitude raises | `alias magnitude abs` |
+| 13 | `step` | **Low** — raises for all dimensional units | Override or document as unsupported |
+| 14 | `angle`/`arg`/`phase`/`polar` for complex-valued dimensional units | **Low** — raises via `<=>` but `angle` is well-defined for complex values | Override to use `value.angle` when `!value.real?` |
 
 ### Untested working behaviour
 
@@ -191,6 +200,7 @@ error should be added so the behaviour is explicit and can't regress silently:
 | `clone` | Not tested |
 | `Kernel` conversions (`Float()`, `Integer()`, `Rational()`) | Not tested |
 | `angle`/`magnitude`/`step`/`polar` raise paths | Not tested (Group 4 above) |
+| `abs2` for complex-valued units | Not tested |
 
 ---
 
@@ -258,12 +268,13 @@ input form.
 ## Remaining suggested test additions
 
 ```ruby
-describe "#to_c" do ... end                      # Group 2: untested, works
-describe "#clone" do ... end                     # Group 2: untested, works
-describe "Kernel conversions" do                 # Group 2: Float(), Integer(), Rational()
-describe "#fdiv with Unit divisor" do ... end    # Open issue 9
-describe "#magnitude" do ... end                 # Open issue 10 (should alias abs)
-describe "#step" do ... end                      # Open issue 11
-describe "raises by design" do                   # Group 4: angle, polar, step, magnitude
-describe "#** with large exponents" do ... end   # version-gated: 3.3 vs 3.4+
+describe "#to_c" do ... end                          # Group 2: untested, works
+describe "#clone" do ... end                         # Group 2: untested, works
+describe "Kernel conversions" do ... end             # Float(), Integer(), Rational()
+describe "#magnitude" do ... end                     # Open issue 12 (should alias abs)
+describe "#step" do ... end                          # Open issue 13
+describe "raises by design" do ... end               # Group 4: angle, polar, step, magnitude
+describe "#** with large exponents" do ... end       # version-gated: 3.3 vs 3.4+
+describe "#abs2 with complex value" do ... end       # complex Unit(Complex(3,4),'m').abs2
+describe "#angle/#polar for complex-valued units" do # open issue 14
 ```
